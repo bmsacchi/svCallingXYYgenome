@@ -1,0 +1,24 @@
+################################
+# Sniffles for variant calling #
+################################
+
+rule all:
+    input:
+
+
+# map long read pacbio data to the omni-C scaffolded genomes
+rule map:
+    input:
+        fq = "MYFASTA??"
+    output: 
+        aln = "MYBAM"
+    threads: 
+        10
+    resources:
+        tmpdir: "/ohta2/bianca.sacchi/tmp"
+    shell:
+       """
+       """
+rule k
+    
+
