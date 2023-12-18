@@ -3,8 +3,12 @@
 
 __default__:
   job-name: '{rule}_{wildcards}'
-  account: 'def-wrighste'
+  account: 'def-wrightse'
   output: 'slurm_logs/{rule}/{rule}_{wildcards}.out'
   error: 'slurm_logs/{rule}/{rule}_{wildcards}.err'
   mail-type: 'FAIL'
-  mail-user: 'bianca.sacchi@mail.utoronto.ca'
+  mail-user: 'bianca.m.sacchi@gmail.com'
+  time: 120
+  nodes: 1
+  ntasks: 1
+  mem: 4GB

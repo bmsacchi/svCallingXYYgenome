@@ -2,23 +2,28 @@
 # Sniffles for variant calling #
 ################################
 
+haplotypes = ["NChap1","NChap2"]
+
 rule all:
     input:
+        expand("{haplotype}PacbioMapped.bam", haplotype = haplotypes)
 
+# run pbmm2 (minimap2 wrapper for pacbio) on fofn of all my css fastqs
+# I am assuming here that these are consensus subreads that have already been processed via css or similar
+# i am not totally certain tho
 
-# map long read pacbio data to the omni-C scaffolded genomes
-rule map:
-    input:
-        fq = "MYFASTA??"
-    output: 
-        aln = "MYBAM"
-    threads: 
-        10
-    resources:
-        tmpdir: "/ohta2/bianca.sacchi/tmp"
-    shell:
-       """
-       """
-rule k
-    
-
+rule pbmm2:
+     input: 
+         fa = "../data/{haplotype}_maskedContam.fa.gz",
+	 mylist = "css.fastq.fofn"
+     output: 
+         "{haplotype}PacbioMapped.bam"
+     log: "../data/pbmm2/{haplotype}_log"
+     threads:
+        10 
+     resources: 
+         tmpdir="tmp"
+     shell:
+         """
+         pbmm2 align {input.fa} {input.mylist} {output} --sort --rg '@RG\tID:{wildcards.haplotype}\tSM:xyymale' --preset 'CSS' --num-threads {threads} 2> {log}
+         """

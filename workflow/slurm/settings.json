@@ -1,0 +1,6 @@
+{
+    "SBATCH_DEFAULTS": "def-wrighste",
+    "CLUSTER_NAME": "graham",
+    "CLUSTER_CONFIG": "/scratch/bmsacchi/svCallingXYYgenome/graham.yaml",
+    "ADVANCED_ARGUMENT_CONVERSION": "no"
+}
