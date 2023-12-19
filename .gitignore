@@ -1,2 +1,4 @@
 data/
 workflow/.snakemake/
+workflow/slurm/__pycache__/
+workflow/slurm_logs/

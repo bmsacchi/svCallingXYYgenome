@@ -3,27 +3,33 @@
 ################################
 
 haplotypes = ["NChap1","NChap2"]
+seqs = ["DTG-DNA-1081.r64296e183429C01","DTG-DNA-1081.r64296e183429D01","DTG-DNA-1081.r64296e183429E01","DTG-DNA-1081.r64296e183429F01","DTG-DNA-1081.r64296e215504F01"]
 
 rule all:
     input:
-        expand("{haplotype}PacbioMapped.bam", haplotype = haplotypes)
+        bam = expand("../data/{haplotype}_{seq}_PacbioMapped.sam", haplotype = haplotypes,seq=seqs)
 
 # run pbmm2 (minimap2 wrapper for pacbio) on fofn of all my css fastqs
 # I am assuming here that these are consensus subreads that have already been processed via css or similar
 # i am not totally certain tho
 
-rule pbmm2:
+# nevermind, use minimap2 directly. pbmm2 did not appreciate the fasta input :(
+
+rule minimap2:
      input: 
          fa = "../data/{haplotype}_maskedContam.fa.gz",
-	 mylist = "css.fastq.fofn"
+	 fq = "../data/{seq}.ccs_subreads.fastq.gz"
      output: 
-         "{haplotype}PacbioMapped.bam"
-     log: "../data/pbmm2/{haplotype}_log"
+         "../data/{haplotype}_{seq}_PacbioMapped.sam"
+     message:
+         "mapping fastq {wildcards.seq} to {wildcards.haplotype}"
+     conda: "envs/environment.yaml"
      threads:
-        10 
+         8 
      resources: 
-         tmpdir="tmp"
+         mem_mb=24000,
+	 time = '10:00:00'
      shell:
          """
-         pbmm2 align {input.fa} {input.mylist} {output} --sort --rg '@RG\tID:{wildcards.haplotype}\tSM:xyymale' --preset 'CSS' --num-threads {threads} 2> {log}
+         minimap2 -ax map-hifi -R '@RG\\tID:{wildcards.seq}\\tSM:{wildcards.haplotype}' -t {threads} {input.fa} {input.fq} > {output}
          """
