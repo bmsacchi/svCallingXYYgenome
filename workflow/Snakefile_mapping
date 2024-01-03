@@ -1,0 +1,110 @@
+##########################################
+# mapping to prepare for variant calling #
+##########################################
+
+haplotypes = ["NChap1","NChap2"]
+seqs = ["DTG-DNA-1081.r64296e183429C01","DTG-DNA-1081.r64296e183429D01","DTG-DNA-1081.r64296e183429E01","DTG-DNA-1081.r64296e183429F01","DTG-DNA-1081.r64296e215504F01"]
+
+
+rule all:
+    input:
+        sam = expand("../data/{haplotype}_{seq}_PacbioMapped.sam", haplotype = haplotypes,seq=seqs),
+        bam = expand("../data/{haplotype}_{seq}_PacbioMapped.bam", haplotype = haplotypes,seq=seqs),
+        mergedbam = expand("../data/{haplotype}_MergedPacbioMapped.bam", haplotype = haplotypes),
+	bamidx = expand("../data/{haplotype}_MergedPacbioMapped.bam.bai", haplotype = haplotypes),
+
+# run pbmm2 (minimap2 wrapper for pacbio) on fofn of all my css fastqs
+# I am assuming here that these are consensus subreads that have already been processed via css or similar
+# i am not totally certain tho
+
+# nevermind, use minimap2 directly. pbmm2 did not appreciate the fasta input :(
+
+rule minimap2:
+     input: 
+         fa = "../data/{haplotype}_maskedContam.fa.gz",
+	 fq = "../data/{seq}.ccs_subreads.fastq.gz"
+     output: 
+         "../data/{haplotype}_{seq}_PacbioMapped.sam"
+     message:
+         "mapping fastq {wildcards.seq} to {wildcards.haplotype}"
+     conda: "envs/minimap2.yaml"
+     threads:
+         10
+     resources: 
+         mem_mb=20000,
+	 time = '14:00:00'
+     shell:
+         """
+         minimap2 -ax map-hifi -R '@RG\\tID:{wildcards.seq}\\tSM:{wildcards.haplotype}' -t {threads} {input.fa} {input.fq} > {output}
+         """
+
+rule sort_bam:
+    input: 
+        sam = {rules.minimap2.output}
+    output:
+        "../data/{haplotype}_{seq}_PacbioMapped.bam"
+    conda: "envs/environment.yaml"
+    threads:
+        4
+    resources:
+        mem_mb=8000,
+        time = '3:00:00',
+    shell:
+        """
+	samtools sort {input} -o {output} -T $SLURM_TMPDIR/ -@ {threads}
+	"""
+
+rule merge_bam:
+    input: 
+        ["../data/{haplotype}_DTG-DNA-1081.r64296e183429C01_PacbioMapped.bam",
+	"../data/{haplotype}_DTG-DNA-1081.r64296e183429D01_PacbioMapped.bam",
+	"../data/{haplotype}_DTG-DNA-1081.r64296e183429E01_PacbioMapped.bam",
+	"../data/{haplotype}_DTG-DNA-1081.r64296e183429F01_PacbioMapped.bam",
+	"../data/{haplotype}_DTG-DNA-1081.r64296e215504F01_PacbioMapped.bam"]
+    output:
+        "../data/{haplotype}_MergedPacbioMapped.bam"
+    conda: "envs/environment.yaml"
+    threads:
+        8
+    resources:
+         mem_mb=8000,
+	 time='3:00:00'
+    shell:
+         """
+	 samtools merge -@ {threads} -o {output} {input} 
+	 """
+
+rule index_bam:
+    input: 
+        {rules.merge_bam.output}
+    output: 
+        "../data/{haplotype}_MergedPacbioMapped.bam.bai"
+    conda: "envs/environment.yaml"
+    threads:
+        8
+    resources:
+        mem_mb=8000,
+	time='3:00:00'
+    log:
+        "logs/samtools_index/{haplotype}.log",
+    params:
+        extra="",  # optional params string
+    wrapper:
+        "v3.3.3/bio/samtools/index"
+
+rule sniffles:
+     input: 
+        bam = {rules.merge_bam.output},
+	fasta = "../data/{haplotype}_maskedContam.fasta"
+     output:
+        vcf = "../data/{haplotype}_svCalling.vcf"
+     conda: "envs/sniffles.yaml"
+     threads: 
+         10
+     resources:
+         mem_mb=20000,
+	 time='12:00:00'
+     shell:
+         """
+         sniffles -i {input.bam} --reference {input.fasta} -v {output}
+	 """
