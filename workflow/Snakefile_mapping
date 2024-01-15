@@ -31,8 +31,8 @@ rule minimap2:
      threads:
          10
      resources: 
-         mem_mb=20000,
-	 time = '14:00:00'
+         mem_mb=20000, # only needs about 12gb
+	 time = '14:00:00' # 10 hours prob ok
      shell:
          """
          minimap2 -ax map-hifi -R '@RG\\tID:{wildcards.seq}\\tSM:{wildcards.haplotype}' -t {threads} {input.fa} {input.fq} > {output}

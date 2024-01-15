@@ -6,21 +6,21 @@ haplotypes = ["NChap1","NChap2"]
 
 rule all:
     input:
-        vcf = expand("../data/vcfs/{haplotype}_svCalling.vcf", haplotype = haplotypes)
+        vcf = expand("../data/vcfs/{haplotype}_maskRepeat_svCalling.vcf", haplotype = haplotypes)
 
 rule sniffles:
      input:
-        bam = "../data/{haplotype}_MergedPacbioMapped.bam",
-        fasta = "../data/{haplotype}_maskedContam.fasta"
+        bam = "../data/bams/{haplotype}_MergedPacbioMapped.bam",
+	bed = "../data/bed/{haplotype}_final_TEanno_sort.bed"
      output:
-        vcf = "../data/vcfs/{haplotype}_svCalling.vcf"
+        vcf = "../data/vcfs/{haplotype}_maskRepeat_svCalling.vcf"
      conda: "envs/sniffles.yaml"
      threads:
          10
      resources:
-         mem_mb=20000,
-         time='12:00:00'
+         mem_mb=8000,
+         time='2:00:00' 
      shell:
          """
-         sniffles -i {input.bam} --reference {input.fasta} -v {output}
+         sniffles -i {input.bam} --tandem-repeats {input.bed} -v {output}
          """
