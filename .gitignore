@@ -6,4 +6,5 @@ workflow/nohup*
 analyses/samplots/
 analyses/samplots_hap1_large/
 analyses/samplot_vcf_cmds.tmp
+analyses/bamqc/
 
