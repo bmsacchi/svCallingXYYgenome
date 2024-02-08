@@ -1,24 +1,16 @@
 ### workflow ###
-chr = ["A1","A2"]
 
-rule all:
-     input:
-          "../analyses/bamqc_zoom/{chr}/results.txt",
-          "../analuses/bamqc_zoom/{chr}/qualimapReport.html"
-
-# This rule runs bamqc and creates depth plots
 rule bamqc:
     input:
-        bam = "../data/hybMapBam/hybMergedPacbioMapped.bam",
-        anno = "gff/chr_regions.bed"
+        bam = "../data/mergeBam/mergedPacbioMapped.bam",
     output:
-        txt = "bamqc/results.txt",
-        html = "bamqc/qualimapReport.html"
+        txt = "../analyses/bamqc_merged/results.txt",
+        html = "../analyses/bamqc_merged/qualimapReport.html"
     params:
-        outdir = "bamqc",
+        outdir = "bamqc_merged",
     log:
-        out = "logs/bamqc/bamqc.qc.out",
-        err = "logs/bamqc/bamqc.qc.err"
+        out = "logs/bamqc_merged/bamqc.qc.out",
+        err = "logs/bamqc_merged/bamqc.qc.err"
     threads: 20
     resources:
         tmpdir="/ohta2/bianca.sacchi/tmp/"
@@ -29,7 +21,6 @@ rule bamqc:
         "--bam {input.bam} "
         "--paint-chromosome-limits "
         "-nt {threads} "
-        #"-gff {input.anno} "
         "--outdir {params.outdir} "
         "> {log.out} 2> {log.err}"
 
